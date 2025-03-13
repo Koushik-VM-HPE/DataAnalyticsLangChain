@@ -10,7 +10,14 @@ import random
 
 """
 Ref - https://medium.com/ai-agents/langgraph-for-beginners-part-3-conditional-edges-16a3aaad9f31
-VERY Basic LangGraph implementation
+VERY Basic LangGraph implementation without LLM
+Task 1 - Determining the weather?
+START - weather -- (conditionally returns rainy or sunny) 
+                  --> Rainy -->
+                 |             |
+START - Weather -               --> END
+                 |             |
+                  --> Sunny -->
 """
 """
 def weather(str):
@@ -48,9 +55,10 @@ print(app.invoke("How much is 2+2"))
 
 """
 Ref - https://langchain-ai.github.io/langgraph/tutorials/introduction/#part-1-build-a-basic-chatbot
-Basic Chatbot implementation
+Task 2- Basic Chatbot implementation (Using StateGraph)
+Single Node Implementation - START - Chatbot - END
 """
-
+"""
 # Define the state for the agent
 class State(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
@@ -92,4 +100,54 @@ if __name__ == "__main__":
       stream_graph_updates(user_input)
       break
 
-# """
+"""
+"""
+References : ChatGPT
+Task 3- Translation + Summarization using Graph
+
+Nodes - START -> INPUT -> TRANSLATION -> SUMMARIZATION -> END
+"""
+
+def init_task(str):
+  # print('"Hello, how are you today?"')
+  return str
+
+def translate(str):
+  return translate_chain.invoke(str)
+
+def summarize(str):
+  return summarize_chain.invoke(str)
+
+
+# Initialize OllamaLLM with the "deepseek-r1:7b" model
+llm = OllamaLLM(model="deepseek-r1:7b")
+
+# Step 1: Define a prompt template for translating text (from English to French)
+translate_prompt = PromptTemplate(input_variables=["text"], template="Translate the following English text to Spanish: {text}")
+# translate_chain = LLMChain(prompt=translate_prompt, llm=llm)
+translate_chain = translate_prompt | llm
+
+# Step 2: Define a prompt template for summarizing the translated text
+summarize_prompt = PromptTemplate(input_variables=["text"], template="Summarize the following text: {text}")
+# summarize_chain = LLMChain(prompt=summarize_prompt, llm=llm)
+summarize_chain = summarize_prompt | llm
+
+# Step 3: Create a LangGraph to chain the tasks together
+graph = Graph()
+
+# Task 1: Input text that needs to be translated
+graph.add_node("input_text", init_task)
+
+# Task 2: Translate the input text
+graph.add_node("translate_text", translate)
+
+# Task 3: Summarize the translated text
+graph.add_node("summarize_text", summarize)
+
+# Connect tasks (edges in the graph)
+graph.add_edge(START, "input_text")
+graph.add_edge("input_text", "translate_text")
+graph.add_edge("translate_text", END)
+graph.add_edge("summarize_text", END)
+app = graph.compile()
+print(app.invoke('How is the weather?')) # Replace with any other String to be translated
