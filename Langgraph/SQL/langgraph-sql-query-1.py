@@ -72,7 +72,8 @@ def ollama_generate_sql_with_deepseek(query: str, schema: dict):
 
        User Query: {query}
        Generate only the SQL query. Do **not** provide any explanations, reasoning, or additional commentary. 
-        Return **ONLY** the SQL query in the following format:
+       Ensure to specify table names for columns that appear in multiple tables.
+       Return **ONLY** the SQL query in the following format:
 
     \'{{\"query\": \"SELECT ...\"}}\'"
     """
@@ -83,6 +84,7 @@ def ollama_generate_sql_with_deepseek(query: str, schema: dict):
     clean_content = re.sub(r'<think>.*?</think>', '', response['message']['content'], flags=re.DOTALL).strip()
     parsed_resp = json.loads(clean_content)
     return parsed_resp['query']
+
 
 # LangGraph Workflow to process the query
 def process_query(query, session):
@@ -98,35 +100,16 @@ def process_query(query, session):
 # Execute the generated SQL query using SQLAlchemy session
 def execute_dynamic_query(sql, session):
     sql_query = text(sql)
-    result = session.execute(sql_query).fetchall()  # Execute raw SQL
+    result = session.execute(sql_query)  # Execute raw SQL
+    column_names = [col[0] for col in result.cursor.description]  # Get column names from the result description
+    rows = result.fetchall()  # Fetch the result rows
 
-    # If result is empty, handle that case
-    if not result:
-        return result, []
+    return format_output_with_llm(rows, column_names)  # Return both column names and rows
 
-    # Try to extract column names dynamically from the result description (from SQLAlchemy)
-    column_names = []
-    if result:
-        # Access column names using description attribute
-        column_names = [desc['name'] for desc in result.cursor.description]
-
-    return result, column_names
-
-
-# Format the output
-def format_output(result):
-    output = "\nQuery Result:\n"
-    # Iterate over result to handle output properly
-    for row in result:
-        customer_id, customer_name, order_count = row
-        output += f"Customer ID: {customer_id}, Name: {customer_name}, Orders Placed: {order_count}\n"
-    return output
 
 
 # Use LLM to format the output of the query
 def format_output_with_llm(result, column_names):
-    print(column_names)
-    # Prepare the data as a string to pass to LLM for formatting
     result_data = []
     for row in result:
         row_data = dict(zip(column_names, row))  # Create a dictionary with column names as keys
@@ -155,13 +138,13 @@ graph = Graph()
 # Add nodes to the workflow
 graph.add_node("process_query", lambda query: process_query(query, session))  # Pass session here
 graph.add_node("execute_dynamic_query", lambda sql: execute_dynamic_query(sql, session))  # Pass session here
-graph.add_node("format_output", format_output_with_llm)
+# graph.add_node("format_output", format_output_with_llm)
 
 # Connect the nodes (task flow)
 graph.add_edge(START, "process_query")
 graph.add_edge("process_query", "execute_dynamic_query")
-graph.add_edge("execute_dynamic_query", "format_output")
-graph.add_edge("format_output", END)
+graph.add_edge("execute_dynamic_query", END)
+# graph.add_edge("format_output", END)
 
 # Test with a user query
 query = "How many orders were placed by each customer? I want both the customer details like name, customer ID and the order count"
