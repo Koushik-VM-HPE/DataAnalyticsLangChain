@@ -72,7 +72,7 @@ def ollama_generate_sql_with_deepseek(query: str, schema: dict):
 
        User Query: {query}
        Generate only the SQL query. Do **not** provide any explanations, reasoning, or additional commentary. 
-       Ensure to specify table names for columns that appear in multiple tables.
+       Ensure to specify table names for all the columns that appear in multiple tables.
        Return **ONLY** the SQL query in the following format:
 
     \'{{\"query\": \"SELECT ...\"}}\'"
@@ -103,21 +103,22 @@ def execute_dynamic_query(sql, session):
     result = session.execute(sql_query)  # Execute raw SQL
     column_names = [col[0] for col in result.cursor.description]  # Get column names from the result description
     rows = result.fetchall()  # Fetch the result rows
-
-    return format_output_with_llm(rows, column_names)  # Return both column names and rows
-
-
-
-# Use LLM to format the output of the query
-def format_output_with_llm(result, column_names):
     result_data = []
-    for row in result:
+    for row in rows:
         row_data = dict(zip(column_names, row))  # Create a dictionary with column names as keys
         formatted_row = ', '.join([f"{key}: {value}" for key, value in row_data.items()])
         result_data.append(formatted_row)
 
     # Convert to string and pass to Ollama model for formatting
     formatted_data = "\n".join(result_data)
+    return formatted_data
+    # return format_output_with_llm(formatted_data)
+
+
+
+# Use LLM to format the output of the query
+def format_output_with_llm(formatted_data):
+
     message = f"""
     Below are the results from the query:
 
@@ -138,7 +139,7 @@ graph = Graph()
 # Add nodes to the workflow
 graph.add_node("process_query", lambda query: process_query(query, session))  # Pass session here
 graph.add_node("execute_dynamic_query", lambda sql: execute_dynamic_query(sql, session))  # Pass session here
-# graph.add_node("format_output", format_output_with_llm)
+graph.add_node("format_output", format_output_with_llm)
 
 # Connect the nodes (task flow)
 graph.add_edge(START, "process_query")
