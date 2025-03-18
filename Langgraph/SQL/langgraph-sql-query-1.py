@@ -126,7 +126,9 @@ def format_output_with_llm(formatted_data):
 
     Please format the above information into a well-structured, human-readable report. 
     The result can vary in structure, so format it in a flexible, readable manner. Ensure clarity and readability in the output.
+    Give the output in a key, value pairs for each column name and its value in a JSON format
     """
+    # Give ONLY the output in a JSON format.
 
     # Call the LLM for formatting
     response = ollama.chat(model="deepseek-r1:7b", messages=[{"role": "user", "content": message}])
