@@ -72,7 +72,9 @@ def ollama_generate_sql_with_deepseek(query: str, schema: dict):
 
        User Query: {query}
        Generate only the SQL query. Do **not** provide any explanations, reasoning, or additional commentary. 
-       Ensure to specify table names for all the columns that appear in multiple tables.    
+       - Ensure to specify table names for all the columns that appear in multiple tables.
+       - If the query asks for aggregated data, ensure you use appropriate aggregation functions like `COUNT()`, `SUM()`, etc.
+       - Include `GROUP BY` if the query involves aggregation.    
        Return **ONLY** the SQL query in the following format:
 
     \'{{\"query\": \"SELECT ...\"}}\'"
