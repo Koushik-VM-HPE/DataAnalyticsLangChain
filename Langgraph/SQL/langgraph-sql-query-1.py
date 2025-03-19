@@ -144,10 +144,12 @@ def format_output_with_llm(formatted_data):
     if json_content:
         # Convert the matched JSON string to a Python dictionary
         json_data = json.loads(json_content.group(0))
-        print(json_data)
+        # print(json_data)
+        return json_data
     else:
         print("No JSON found in the response.")
-    return json_data
+        return ""
+
 
 # Set up LangGraph Workflow
 graph = Graph()
