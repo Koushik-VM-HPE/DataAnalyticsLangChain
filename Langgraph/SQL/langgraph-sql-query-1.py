@@ -39,7 +39,7 @@ Session = sessionmaker(bind=engine)
 # Adding some sample data (only if the database is empty)
 session = Session()
 if not session.query(Customer).first():
-    session.add_all([Customer(name="Jacob Peralta"), Customer(name="Igor Karkaroff")])
+    session.add_all([Customer(name="Koushikk"), Customer(name="Ravindran")])
     session.commit()
 
 if not session.query(Order).first():
@@ -138,7 +138,16 @@ def format_output_with_llm(formatted_data):
     # Call the LLM for formatting
     response = ollama.chat(model="deepseek-r1:7b", messages=[{"role": "user", "content": message}])
     formatted_output = response['message']['content']
-    return formatted_output
+    clean_content = re.sub(r'<think>.*?</think>', '', formatted_output, flags=re.DOTALL).strip()
+    json_content = re.search(r'\{.*\}', clean_content, re.DOTALL)
+
+    if json_content:
+        # Convert the matched JSON string to a Python dictionary
+        json_data = json.loads(json_content.group(0))
+        print(json_data)
+    else:
+        print("No JSON found in the response.")
+    return json_data
 
 # Set up LangGraph Workflow
 graph = Graph()
