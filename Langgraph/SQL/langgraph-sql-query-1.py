@@ -72,8 +72,10 @@ def ollama_generate_sql_with_deepseek(query: str, schema: dict):
 
        User Query: {query}
        Generate only the SQL query. Do **not** provide any explanations, reasoning, or additional commentary. 
-       - Ensure to specify table names for all the columns that appear in multiple tables.
+       - **Use fully qualified column names**, meaning include both the table name and column name when referencing columns that appear in multiple tables (e.g., use `customers.name` instead of `name`).
+       - **Never** omit the table name for columns that could be ambiguous across multiple tables. Refer to the correct columns from each table and don't mix them up.
        - If the query asks for aggregated data, ensure you use appropriate aggregation functions like `COUNT()`, `SUM()`, etc.
+       - If there is a request for aggregates (e.g., COUNT, SUM), ensure that the proper aggregate functions are used with `GROUP BY` when needed. 
        - Include `GROUP BY` if the query involves aggregation.    
        Return **ONLY** the SQL query in the following format:
 
@@ -129,7 +131,7 @@ def format_output_with_llm(formatted_data):
 
     Please format the above information into a well-structured, human-readable report. 
     The result can vary in structure, so format it in a flexible, readable manner. Ensure clarity and readability in the output.
-    Give the output in a key, value pairs for each Column Name and its value in a JSON format like so. I want it in a response block:
+    Give the output in a key, value pairs for each Column Name and its value in a JSON format like so. I want it in a response block. I do not want any other attributes in the final JSON apart from response:
     
     \'"{{\"response\": [{{\"country\": \"France\", \"capital\": \"Paris\"}}, {{\"country\": \"Germany\", \"capital\": \"Berlin\"}}], \"...\": \"More countries can be added here\"}}\'"
     """
