@@ -39,7 +39,7 @@ Session = sessionmaker(bind=engine)
 # Adding some sample data (only if the database is empty)
 session = Session()
 if not session.query(Customer).first():
-    session.add_all([Customer(name="John Doe"), Customer(name="Jane Smith")])
+    session.add_all([Customer(name="Koushikk"), Customer(name="Ravindran")])
     session.commit()
 
 if not session.query(Order).first():
@@ -72,7 +72,11 @@ def ollama_generate_sql_with_deepseek(query: str, schema: dict):
 
        User Query: {query}
        Generate only the SQL query. Do **not** provide any explanations, reasoning, or additional commentary. 
-       Ensure to specify table names for all the columns that appear in multiple tables.
+       - **Use fully qualified column names**, meaning include both the table name and column name when referencing columns that appear in multiple tables (e.g., use `customers.name` instead of `name`).
+       - **Never** omit the table name for columns that could be ambiguous across multiple tables. Refer to the correct columns from each table and don't mix them up.
+       - If the query asks for aggregated data, ensure you use appropriate aggregation functions like `COUNT()`, `SUM()`, etc.
+       - If there is a request for aggregates (e.g., COUNT, SUM), ensure that the proper aggregate functions are used with `GROUP BY` when needed. 
+       - Include `GROUP BY` if the query involves aggregation.    
        Return **ONLY** the SQL query in the following format:
 
     \'{{\"query\": \"SELECT ...\"}}\'"
@@ -99,6 +103,8 @@ def process_query(query, session):
 
 # Execute the generated SQL query using SQLAlchemy session
 def execute_dynamic_query(sql, session):
+
+
     sql_query = text(sql)
     result = session.execute(sql_query)  # Execute raw SQL
     column_names = [col[0] for col in result.cursor.description]  # Get column names from the result description
@@ -118,7 +124,6 @@ def execute_dynamic_query(sql, session):
 
 # Use LLM to format the output of the query
 def format_output_with_llm(formatted_data):
-
     message = f"""
     Below are the results from the query:
 
@@ -126,14 +131,27 @@ def format_output_with_llm(formatted_data):
 
     Please format the above information into a well-structured, human-readable report. 
     The result can vary in structure, so format it in a flexible, readable manner. Ensure clarity and readability in the output.
-    Give the output in a key, value pairs for each column name and its value in a JSON format
+    Give the output in a key, value pairs for each Column Name and its value in a JSON format like so. I want it in a response block. I do not want any other attributes in the final JSON apart from response:
+    
+    \'"{{\"response\": [{{\"country\": \"France\", \"capital\": \"Paris\"}}, {{\"country\": \"Germany\", \"capital\": \"Berlin\"}}], \"...\": \"More countries can be added here\"}}\'"
     """
     # Give ONLY the output in a JSON format.
-
+    print(formatted_data)
     # Call the LLM for formatting
     response = ollama.chat(model="deepseek-r1:7b", messages=[{"role": "user", "content": message}])
     formatted_output = response['message']['content']
-    return formatted_output
+    clean_content = re.sub(r'<think>.*?</think>', '', formatted_output, flags=re.DOTALL).strip()
+    json_content = re.search(r'\{.*\}', clean_content, re.DOTALL)
+
+    if json_content:
+        # Convert the matched JSON string to a Python dictionary
+        json_data = json.loads(json_content.group(0))
+        # print(json_data)
+        return json_data
+    else:
+        print("No JSON found in the response.")
+        return ""
+
 
 # Set up LangGraph Workflow
 graph = Graph()
@@ -146,11 +164,24 @@ graph.add_node("format_output", format_output_with_llm)
 # Connect the nodes (task flow)
 graph.add_edge(START, "process_query")
 graph.add_edge("process_query", "execute_dynamic_query")
-graph.add_edge("execute_dynamic_query", END)
-# graph.add_edge("format_output", END)
+graph.add_edge("execute_dynamic_query", "format_output")
+graph.add_edge("format_output", END)
 
 # Test with a user query
 query = "How many orders were placed by each customer? I want both the customer details like name, customer ID and the order count"
+
+# Query to select all rows from the Customer table
+customers = session.query(Customer).all()
+
+# Query to select all rows from the Order table
+orders = session.query(Order).all()
+
+# Print the results
+for customer in customers:
+    print(customer.customer_id, customer.name)  # Adjust according to your model fields
+
+for order in orders:
+    print(order.order_id, order.customer_id)  # Adjust according to your model fields
 
 # Run the LangGraph with the user query
 app = graph.compile()
