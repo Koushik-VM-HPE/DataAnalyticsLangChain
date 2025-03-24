@@ -78,7 +78,7 @@
 
 # model = OllamaLLM(model="deepseek-r1:7b")
 # # from langchain import hub
-# # prompt = hub.pull("hwchase17/react", api_key="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", api_url="https://api.smith.langchain.com")
+# # prompt = hub.pull("hwchase17/react")
 
 
 # agent_runnable = create_react_agent(model, tools, prompt)
