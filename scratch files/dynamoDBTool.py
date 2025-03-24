@@ -17,6 +17,7 @@ dynamodb_client = boto3.resource(
     'dynamodb',
     aws_access_key_id="AKIAWA33VBQEZCMFNKWP",
     aws_secret_access_key="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",
+    ####
     # TODO: remove the following 
     # integ keys
     # aws_access_key_id="AKIA2I6HKRSFKNSP35XH",
