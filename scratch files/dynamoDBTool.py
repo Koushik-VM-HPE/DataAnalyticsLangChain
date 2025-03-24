@@ -15,15 +15,6 @@ llm = OllamaLLM(model="deepseek-r1:7b")
 # Initialize DynamoDB client
 dynamodb_client = boto3.resource(
     'dynamodb',
-    aws_access_key_id="AKIAWA33VBQEZCMFNKWP",
-    aws_secret_access_key="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",
-    ####
-    # TODO: remove the following 
-    # integ keys
-    # aws_access_key_id="AKIA2I6HKRSFKNSP35XH",
-    # aws_secret_access_key="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",
-    # region_name="us-west-2"
-    region_name="us-east-1"
 )
 
 # def list_users(user_id: str):
