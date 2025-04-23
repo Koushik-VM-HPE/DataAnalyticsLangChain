@@ -9,11 +9,11 @@ from langchain_ollama import ChatOllama
 from langchain.tools import tool
 
 # Define the state structure
-class State(Dict):
-    messages: List[Dict[str, str]]
+# class State(Dict):
+#     messages: List[Dict[str, str]]
 
-# Initialize the StateGraph
-graph_builder = StateGraph(State)
+# # Initialize the StateGraph
+# graph_builder = StateGraph(State)
 
 # Initialize the Ollama local model
 # local_llm = ChatOllama(model="deepseek-r1:7b")  # Change to 'llama2', 'gemma', etc., if needed
