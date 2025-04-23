@@ -43,23 +43,22 @@ cluster_table_hash_key = "tenantID_siteID"
 cluster_table_range_key = "clusterID"
 
 @tool
-def construct_filter_for_list_clusters(attribute: str = "", value: str = "", limit: int = 10):
+def construct_filter_for_list_clusters(filters: Dict[str, str] = {}, limit: int = 10):
     """
     List clusters from the database based on attribute and value filter.
     
     Parameters:
-    - attribute: Name of the attribute to filter on (e.g. "clusterName", "available")
-    - value: Value to match for the attribute (e.g. "st0322", "true")
     - limit: Maximum number of results to return (default: 10)
+    - `filters` (Optional[Dict[str, str]]): Key-value pairs used as filtering criteria.  
+        - Set to `None` to fetch without filters.
+        - Example: `{"updatedAt": Attr("updatedAt").lt("2023-10-01T00:00:00Z")}` retrives clusters updated less than "2023-10-01T00:00:00Z".
+        - Example: `{"available":"true"}` retrieves clusters that have the attribute set to true.
     
-    Examples:
-    - To find clusters with name st0322: attribute="clusterName", value="st0322"
-    - To find available clusters: attribute="available", value="true"
     
     Returns:
     List of matching cluster items.
     """
-    print(f"########### filter expresion is {attribute} and {value}")
+    print(f"########### filter expresion is {filters}")
     try:
         # table = dynamodb_client.Table("devex_ocm_dev")  # type: ignore
         # hash_key_name = cluster_table_hash_key
@@ -71,17 +70,23 @@ def construct_filter_for_list_clusters(attribute: str = "", value: str = "", lim
         # if range_key_name and range_key_value:
         #     key_condition = And(key_condition, Key(range_key_name).eq(range_key_value))
 
-        print(f"########### filter expresion is {attribute} and {value}")
+        print(f"########### filter expresion is {filters}")
          # Convert simple key-value filters to DynamoDB Attr expressions
         dynamodb_filter = None
-        if attribute and value:
-            dynamodb_filter = {
-                attribute: Attr(attribute).eq(value)
-            }
+        if filters:
+            dynamodb_filter = {}
+            for key, value in filters.items():
+                if value:
+                    dynamodb_filter[key] = Attr(key).eq(value)
+        # if attribute and value:
+        #     dynamodb_filter = {
+        #         attribute: Attr(attribute).eq(value)
+        #     }
 
         print(f"########### DB filter expresion is {dynamodb_filter}")
 
         items = DynamoDBUtils.scan(table_name="devex_ocm_intg", filter=dynamodb_filter, limit=limit)
+        print(f"########### items are {items}")
 
         return items
         # return dynamodb_filter
@@ -123,9 +128,10 @@ def new_interact(user_input: str):
     **Clusters Table:**
     - `tenantID_siteID` (HASH KEY, STRING) - Partition Key (Unique identifier for each Tenant).
     - `clusterID` (RANGE KEY, STRING) - Sort Key (unique itentifier for each user).
-    - `available` (STRING) - availability status of the cluster.
+    - `available` (STRING) - availability status of the cluster. True or False.
     - `updatedAt` (STRING, TIMESTAMP) - last updated timestamp of the cluster status.
     - `clusterName` (STRING) - name of the cluster.
+    - `status` (STRING) - current status of the cluster.
 
     **Instructions:**
     - Use this schema when answering queries.
@@ -188,7 +194,7 @@ def new_interact(user_input: str):
 # Example interaction
 # new_interact("What's the weather today?")
 # new_interact("Tell me a joke")
-new_interact("list all clusters with clusterName devex4")
+new_interact("list all clusters with clusterName devex4 and status is Ready")
 # new_interact("list any 5 clusters")
 
 
