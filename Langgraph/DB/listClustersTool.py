@@ -188,7 +188,7 @@ def new_interact(user_input: str):
 # Example interaction
 # new_interact("What's the weather today?")
 # new_interact("Tell me a joke")
-new_interact("list all clusters with clusterName st0322")
+new_interact("list all clusters with clusterName devex4")
 # new_interact("list any 5 clusters")
 
 
