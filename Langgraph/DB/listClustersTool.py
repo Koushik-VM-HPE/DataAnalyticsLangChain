@@ -54,10 +54,9 @@ def construct_filter_for_list_clusters(filters: Dict[str, str] = {}, limit: int 
     
     Parameters:
     - limit: Maximum number of results to return (default: 10)
-    - `filters` (Optional[Dict[str, str]]): Key-value pairs used as filtering criteria.  
-        - Set to `None` to fetch without filters.
-        - Example: `{"updatedAt": Attr("updatedAt").lt("2023-10-01T00:00:00Z")}` retrives clusters updated less than "2023-10-01T00:00:00Z".
-        - Example: `{"available":"true"}` retrieves clusters that have the attribute set to true.
+    - filters: Dictionary with key-value pairs for filtering
+        - Set to empty dictionary to fetch without filters.
+        - Example: {"available":"True"} retrieves clusters that have the attribute set to true.
     
     
     Returns:
