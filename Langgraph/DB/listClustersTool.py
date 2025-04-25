@@ -126,8 +126,8 @@ def new_interact(user_input: str):
     The database consists of the following tables with their schema details:
 
     **Clusters Table:**
-    - `tenantID_siteID` (HASH KEY, STRING) - Partition Key (Unique identifier for each Tenant).
-    - `clusterID` (RANGE KEY, STRING) - Sort Key (unique itentifier for each user).
+    - `tenantID_siteID` (HASH KEY, STRING) - Partition Key (Unique identifier for each Tenant-site combination).
+    - `clusterID` (RANGE KEY, STRING) - Sort Key (unique identifier for each cluster).
     - `available` (STRING) - availability status of the cluster. True or False.
     - `updatedAt` (STRING, TIMESTAMP) - last updated timestamp of the cluster status.
     - `clusterName` (STRING) - name of the cluster.
