@@ -156,8 +156,10 @@ def new_interact(user_input: str):
     1. For database queries about filters applied to clusters clusters, ALWAYS use and INVOKE the construct_filter_for_list_clusters tool.
 
     2. When using construct_filter_for_list_clusters, follow these rules:
-    - Use attribute parameter for the field name (e.g., "clusterName"). if not required, set it to empty string
-    - Use value parameter for the value to match (e.g., "st0322"). If not required, set it to empty string
+    - Use the filters parameter for the filter expression. It should be a dictionary with key-value pairs with the attribute name as the key and the condition as the value.
+    - If no filters are passed, set filters to an empty dictionary.
+    - Example if the user asks for a clusters with name devex1 it would be \'{{\"clusterName\": \"devex1\"}}\'"
+    - Example if the user asks for a clusters with name devex1 and status is Ready it would be \'{{\"clusterName\": \"devex1\", \"status\": \"Ready\"}}\'"
     - Use limit parameter for maximum results (e.g., 10 or None for all)
     Examples:
     - To find clusters with name "st0322": attribute="clusterName", value="st0322", limit=10
