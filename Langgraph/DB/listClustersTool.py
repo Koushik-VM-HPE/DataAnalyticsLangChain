@@ -104,6 +104,7 @@ def construct_filter_for_list_clusters(filters: Dict[str, str] = {}, limit: int 
 # Update tools list
 tools = [construct_filter_for_list_clusters, search_weather_tool]
 tool_names = ["construct_filter_for_list_clusters", "search_weather_tool"]
+site_map = {"Houston": "cc2fa1db-15da-4ba6-894c-d2accc2ac285"}
 
 agent = create_react_agent(model=local_llm, tools=tools)
 
@@ -136,6 +137,8 @@ def new_interact(user_input: str):
     - `updatedAt` (STRING, TIMESTAMP) - last updated timestamp of the cluster status.
     - `clusterName` (STRING) - name of the cluster.
     - `status` (STRING) - current status of the cluster.
+    - `siteID` (STRING) - identifier for the site where the cluster is located.
+    - `tenantID` (STRING) - identifier for the tenant associated with the cluster.
 
     **Instructions:**
     - Use this schema when answering queries.
@@ -163,6 +166,7 @@ def new_interact(user_input: str):
     - Use the filters parameter for the filter expression. It should be a dictionary with key-value pairs.
     - If no filters are passed, set filters parameter to an empty dictionary.
     - Use limit parameter for maximum results (e.g., 10 or None for all)
+    - In case the query includes any site, use the {site_map} to get the siteID.
     Examples:
     - To list all clusters with clusterName devex4 and status is Ready, filters={{\"clusterName\": \"devex4\", \"status\": \"Ready\"}}, limit=10
     - To list all clusters with clusterName devex4, filters={{\"clusterName\": \"devex4\"}}, limit=10
@@ -190,7 +194,7 @@ def new_interact(user_input: str):
     Thought:'''
 
     prompt = PromptTemplate.from_template(template)
-    formatted_prompt = prompt.format(db_schema=db_schema, tools=tools, tool_names=tool_names, input = user_input, agent_scratchpad = "scratchpad work for agent thinking process:")
+    formatted_prompt = prompt.format(db_schema=db_schema, tools=tools, tool_names=tool_names, input = user_input, agent_scratchpad = "scratchpad work for agent thinking process:", site_map=site_map)
 
     inputs = {"messages": [("user", formatted_prompt)]}
     print_stream(agent.stream(inputs, stream_mode="values"))
@@ -198,7 +202,8 @@ def new_interact(user_input: str):
 # Example interaction
 # new_interact("What's the weather today?")
 # new_interact("Tell me a joke")
-new_interact("list all clusters with clusterName devex4 and status is Ready")
+# new_interact("list all clusters with clusterName devex4 and status is Ready")
+new_interact("Give me all clusters in Houston site that are available")
 # new_interact("list any 5 clusters")
 
 
