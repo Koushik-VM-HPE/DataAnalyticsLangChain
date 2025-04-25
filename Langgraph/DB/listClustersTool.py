@@ -17,7 +17,12 @@ from dynamoDBUtils import DynamoDBUtils
 load_dotenv()
 
 # Initialize the Ollama local model
-local_llm = ChatOllama(model="llama3.1:8b", verbose=True)
+local_llm = ChatOllama(
+    model="llama3.1:8b", 
+    verbose=True,
+    num_thread=4,  # Increase for better CPU utilization
+    keep_alive="10m",  # Keep model loaded in memory for 10 minutes
+    )
 
 # Initialize DynamoDB client
 dynamodb_client = boto3.resource(
@@ -126,7 +131,7 @@ def new_interact(user_input: str):
     The database consists of the following tables with their schema details:
 
     **Clusters Table:**
-    - `tenantID_siteID` (HASH KEY, STRING) - Partition Key (Unique identifier for each Tenant-site combination).
+    - `tenantID_siteID` (HASH KEY, STRING) - Partition Key (Unique identifier for each Tenant).
     - `clusterID` (RANGE KEY, STRING) - Sort Key (unique identifier for each cluster).
     - `available` (STRING) - availability status of the cluster. True or False.
     - `updatedAt` (STRING, TIMESTAMP) - last updated timestamp of the cluster status.
@@ -156,14 +161,12 @@ def new_interact(user_input: str):
     1. For database queries about filters applied to clusters clusters, ALWAYS use and INVOKE the construct_filter_for_list_clusters tool.
 
     2. When using construct_filter_for_list_clusters, follow these rules:
-    - Use the filters parameter for the filter expression. It should be a dictionary with key-value pairs with the attribute name as the key and the condition as the value.
-    - If no filters are passed, set filters to an empty dictionary.
-    - Example if the user asks for a clusters with name devex1 it would be \'{{\"clusterName\": \"devex1\"}}\'"
-    - Example if the user asks for a clusters with name devex1 and status is Ready it would be \'{{\"clusterName\": \"devex1\", \"status\": \"Ready\"}}\'"
+    - Use the filters parameter for the filter expression. It should be a dictionary with key-value pairs.
+    - If no filters are passed, set filters parameter to an empty dictionary.
     - Use limit parameter for maximum results (e.g., 10 or None for all)
     Examples:
-    - To find clusters with name "st0322": attribute="clusterName", value="st0322", limit=10
-    - To find available clusters: attribute="available", value="true", limit=10
+    - To list all clusters with clusterName devex4 and status is Ready, filters={{\"clusterName\": \"devex4\", \"status\": \"Ready\"}}, limit=10
+    - To list all clusters with clusterName devex4, filters={{\"clusterName\": \"devex4\"}}, limit=10
 
     NEVER try to use Attr() expressions directly in your parameters!
 
