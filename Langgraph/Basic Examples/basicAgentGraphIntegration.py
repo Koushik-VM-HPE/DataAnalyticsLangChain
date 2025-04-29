@@ -7,13 +7,7 @@ from langchain.agents import Tool, ZeroShotAgent, AgentExecutor
 from langgraph.prebuilt import create_react_agent
 from langchain_ollama import ChatOllama
 from langchain.tools import tool
-
-# Define the state structure
-class State(Dict):
-    messages: List[Dict[str, str]]
-
-# Initialize the StateGraph
-graph_builder = StateGraph(State)
+from langchain_core.prompts import PromptTemplate
 
 # Initialize the Ollama local model
 # local_llm = ChatOllama(model="deepseek-r1:7b")  # Change to 'llama2', 'gemma', etc., if needed
@@ -24,11 +18,11 @@ local_llm = ChatOllama(model="llama3.1:8b", verbose=True)
 def search_weather_tool(query: str) -> str:
     """A mock tool that returns weather info if the user asks about weather."""
     print("in search weather Tool")
-    if "weather" in query.lower():
-        weather_json = {"desc": "humid", "temp": "110"}
-        return json.dumps(weather_json)
+    # if "weather" in query.lower():
+    weather_json = {"desc": "cold", "temp": "50"}
+    return json.dumps(weather_json)
         # return "It's sunny and 75 degrees."
-    return "I don't have information on that."
+    # return "I don't have information on that."
 
 @tool
 def search_joke_tool(query: str) -> str:
@@ -38,19 +32,8 @@ def search_joke_tool(query: str) -> str:
         return "Why don’t skeletons fight each other? They don’t have the guts."
     return "I don't have information on that."  # If the tool doesn't handle the query
 
-# # To create a Tool instance manully instead of using the decorator
-# search_weather_tool_instance = Tool(
-#     name="SearchTool",
-#     func=search_weather_tool,
-#     description="Provides weather information based on the query."
-# )
-# search_joke_tool_instance = Tool(
-#     name="JokeTool",
-#     func=search_joke_tool,
-#     description="Provides a joke based on the query."
-# )
-
 tools = [search_weather_tool, search_joke_tool]
+tool_names = ["search_weather_tool", "search_joke_tool"]
 
 graph = create_react_agent(model=local_llm, tools=tools)
 
@@ -58,9 +41,11 @@ graph = create_react_agent(model=local_llm, tools=tools)
 def print_stream(stream):
     for s in stream:
         message = s["messages"][-1]
+        print("####### Printing Stream")
         if isinstance(message, tuple):
-            print(message)
+            print(f"####### message is : {message}")
         else:
+            print("####### pretty print output:")
             message.pretty_print()
 
 # method to interact with llm
@@ -68,7 +53,33 @@ def interact(user_input: str):
     inputs = {"messages": [("user", user_input)]}
     print_stream(graph.stream(inputs, stream_mode="values"))
 
+def new_interact(user_input: str):
+    template = '''Answer the following questions as best you can. You have access to the following tools:
+
+    {tools}
+
+    Use the following format:
+
+    Question: the input question you must answer
+    Thought: you should always think about what to do
+    Action: the action to take, should be one of [{tool_names}]
+    Action Input: the input to the action
+    Observation: the result of the action
+    ... (this Thought/Action/Action Input/Observation can repeat N times)
+    Thought: I now know the final answer
+    Final Answer: the final answer to the original input question
+
+    Begin!
+
+    Question: {input}
+    Thought:{agent_scratchpad}'''
+
+    prompt = PromptTemplate.from_template(template)
+    formatted_prompt = prompt.format(tools=tools, tool_names=tool_names, input = user_input, agent_scratchpad = "scratchpad work for agent thinking process:")
+
+    inputs = {"messages": [("user", formatted_prompt)]}
+    print_stream(graph.stream(inputs, stream_mode="values"))
 
 # Example interaction
-interact("What's the weather today?")
+new_interact("What's the weather today?")
 # interact("Tell me a joke")
