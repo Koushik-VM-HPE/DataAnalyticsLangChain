@@ -48,7 +48,7 @@ cluster_table_hash_key = "tenantID_siteID"
 cluster_table_range_key = "clusterID"
 
 @tool
-def construct_filter_for_list_clusters(filters: Dict[str, str] = {}, limit: int = 10):
+def construct_filter_and_projections_for_list_clusters(filters: Dict[str, str] = {}, limit: int = 10, projections: List[str] = []):
     """
     List clusters from the database based on attribute and value filter.
     
@@ -57,7 +57,8 @@ def construct_filter_for_list_clusters(filters: Dict[str, str] = {}, limit: int 
     - filters: Dictionary with key-value pairs for filtering
         - Set to empty dictionary to fetch without filters.
         - Example: {"available":"True"} retrieves clusters that have the attribute set to true.
-    
+    - projections: List of attributes to include in the response.
+        - Example: ["clusterName", "status"] retrieves only the clusterName and status attributes.
     
     Returns:
     List of matching cluster items.
@@ -75,6 +76,7 @@ def construct_filter_for_list_clusters(filters: Dict[str, str] = {}, limit: int 
         #     key_condition = And(key_condition, Key(range_key_name).eq(range_key_value))
 
         print(f"########### filter expresion is {filters}")
+        print(f"########### projections are {projections}")
          # Convert simple key-value filters to DynamoDB Attr expressions
         dynamodb_filter = None
         if filters:
@@ -82,6 +84,7 @@ def construct_filter_for_list_clusters(filters: Dict[str, str] = {}, limit: int 
             for key, value in filters.items():
                 if value:
                     dynamodb_filter[key] = Attr(key).eq(value)
+
         # if attribute and value:
         #     dynamodb_filter = {
         #         attribute: Attr(attribute).eq(value)
@@ -89,7 +92,7 @@ def construct_filter_for_list_clusters(filters: Dict[str, str] = {}, limit: int 
 
         print(f"########### DB filter expresion is {dynamodb_filter}")
 
-        items = DynamoDBUtils.scan(table_name="devex_ocm_intg", filter=dynamodb_filter, limit=limit)
+        items = DynamoDBUtils.scan(table_name="devex_ocm_intg", filter=dynamodb_filter, limit=limit, projections=projections)
         print(f"########### items are {items}")
 
         return items
@@ -102,8 +105,8 @@ def construct_filter_for_list_clusters(filters: Dict[str, str] = {}, limit: int 
 
 
 # Update tools list
-tools = [construct_filter_for_list_clusters, search_weather_tool]
-tool_names = ["construct_filter_for_list_clusters", "search_weather_tool"]
+tools = [construct_filter_and_projections_for_list_clusters, search_weather_tool]
+tool_names = ["construct_filter_and_projections_for_list_clusters", "search_weather_tool"]
 site_map = {"Houston": "cc2fa1db-15da-4ba6-894c-d2accc2ac285"}
 
 agent = create_react_agent(model=local_llm, tools=tools)
@@ -160,16 +163,18 @@ def new_interact(user_input: str):
     
     IMPORTANT INSTRUCTIONS:
 
-    1. For database queries about filters applied to clusters clusters, ALWAYS use and INVOKE the construct_filter_for_list_clusters tool.
+    1. For database queries about filters applied to clusters clusters, ALWAYS use and INVOKE the construct_filter_and_projections_for_list_clusters tool.
 
-    2. When using construct_filter_for_list_clusters, follow these rules:
+    2. When using construct_filter_and_projections_for_list_clusters, follow these rules:
     - Use the filters parameter for the filter expression. It should be a dictionary with key-value pairs.
     - If no filters are passed, set filters parameter to an empty dictionary.
+    - Use the projections parameter for the attributes to include in the response. It should be a list of attributes.
     - Use limit parameter for maximum results (e.g., 10 or None for all)
     - In case the query includes any site, use the {site_map} to get the siteID.
     Examples:
     - To list all clusters with clusterName devex4 and status is Ready, filters={{\"clusterName\": \"devex4\", \"status\": \"Ready\"}}, limit=10
     - To list all clusters with clusterName devex4, filters={{\"clusterName\": \"devex4\"}}, limit=10
+    - To get only cluster names and status for available clusters: filters={{\"available\": \"True\"}}, projections=[\"clusterName\", \"status\"]
 
     NEVER try to use Attr() expressions directly in your parameters!
 
@@ -203,7 +208,8 @@ def new_interact(user_input: str):
 # new_interact("What's the weather today?")
 # new_interact("Tell me a joke")
 # new_interact("list all clusters with clusterName devex4 and status is Ready")
-new_interact("Give me all clusters in Houston site that are available")
+# new_interact("Give me all clusters in Houston site that are available")
+new_interact("Give me all clusters (clusterIDs and names) in Houston site that are available")
 # new_interact("list any 5 clusters")
 
 

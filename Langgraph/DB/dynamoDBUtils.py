@@ -18,9 +18,19 @@ db_client = boto3.resource(
 )
 class DynamoDBUtils:
     @staticmethod
-    def scan(table_name: str, filter: Optional[dict] = None, limit: Optional[int] = None) -> List[Dict[str, Any]]: # type: ignore
+    def scan(table_name: str, filter: Optional[dict] = None, limit: Optional[int] = None, 
+             projections: Optional[List[str]] = None) -> List[Dict[str, Any]]: # type: ignore
         """
-        Scan a given table with an optional filter expression and limit.
+        Scan a given table with an optional filter expression, limit, and projections.
+        
+        Args:
+            table_name: Name of the table to scan
+            filter: Dictionary of filter conditions using boto3 Attr expressions
+            limit: Maximum number of items to return
+            projections: List of attribute names to include in the results
+            
+        Returns:
+            List of items matching the criteria with specified attributes
         """
         try:
             table = db_client.Table(table_name) # type: ignore
@@ -34,6 +44,17 @@ class DynamoDBUtils:
                     else:
                         filter_expression = condition
                 scan_kwargs["FilterExpression"] = filter_expression
+                
+            # Add ProjectionExpression if projections are specified
+            if projections:
+                # Create expression attribute names for all attributes to avoid reserved keyword issues
+                expression_attribute_names = {f"#{i}": attr for i, attr in enumerate(projections)}
+    
+                # Create projection expression using the placeholders
+                projection_expression = ", ".join([f"#{i}" for i in range(len(projections))])
+    
+                scan_kwargs["ExpressionAttributeNames"] = expression_attribute_names
+                scan_kwargs["ProjectionExpression"] = projection_expression
 
             items = []
             last_evaluated_key = None
