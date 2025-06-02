@@ -14,8 +14,10 @@ db_client = boto3.resource(
     'dynamodb',
     aws_access_key_id=os.getenv('AWS_DB_ACCESS_KEY_ID'),
     aws_secret_access_key=os.getenv('AWS_DB_SECRET_ACCESS_KEY'),
-    region_name=os.getenv('AWS_DB_REGION')
-)
+    region_name=os.getenv('AWS_DB_REGION'),
+    endpoint_url=os.getenv('AWS_DB_ENDPOINT_URL', 'http://localhost:8000')  # Default to local DynamoDB if not set
+),
+
 class DynamoDBUtils:
     @staticmethod
     def scan(table_name: str, filter: Optional[dict] = None, limit: Optional[int] = None, 

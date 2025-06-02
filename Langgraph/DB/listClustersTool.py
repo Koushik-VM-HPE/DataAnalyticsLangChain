@@ -23,13 +23,14 @@ local_llm = ChatOllama(
     num_thread=4,  # Increase for better CPU utilization
     keep_alive="10m",  # Keep model loaded in memory for 10 minutes
     )
-
+TableName = os.getenv('AWS_DB_TABLE_NAME','devex_ocm_local') # DynamoDB table name
 # Initialize DynamoDB client
 dynamodb_client = boto3.resource(
     'dynamodb',
     aws_access_key_id=os.getenv('AWS_DB_ACCESS_KEY_ID'),
     aws_secret_access_key=os.getenv('AWS_DB_SECRET_ACCESS_KEY'),
-    region_name=os.getenv('AWS_DB_REGION')
+    region_name=os.getenv('AWS_DB_REGION'),
+    endpoint_url=os.getenv('AWS_DB_ENDPOINT_URL', 'http://localhost:8000')  # Default to local DynamoDB endpoint
 )
 
 # Define a simple tool function
@@ -43,7 +44,7 @@ def search_weather_tool(query: str) -> str:
         # return "It's sunny and 75 degrees."
     # return "I don't have information on that."
 
-cluster_table = dynamodb_client.Table("devex_ocm_dev")  # type: ignore
+cluster_table = dynamodb_client.Table(TableName)  # type: ignore
 cluster_table_hash_key = "tenantID_siteID"
 cluster_table_range_key = "clusterID"
 
@@ -92,7 +93,7 @@ def construct_filter_and_projections_for_list_clusters(filters: Dict[str, str] =
 
         print(f"########### DB filter expresion is {dynamodb_filter}")
 
-        items = DynamoDBUtils.scan(table_name="devex_ocm_intg", filter=dynamodb_filter, limit=limit, projections=projections)
+        items = DynamoDBUtils.scan(table_name=TableName, filter=dynamodb_filter, limit=limit, projections=projections) # type: ignore
         print(f"########### items are {items}")
 
         return items
