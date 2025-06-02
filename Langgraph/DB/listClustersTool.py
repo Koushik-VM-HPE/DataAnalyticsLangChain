@@ -108,6 +108,7 @@ def construct_filter_and_projections_for_list_clusters(filters: Dict[str, str] =
 # Update tools list
 tools = [construct_filter_and_projections_for_list_clusters, search_weather_tool]
 tool_names = ["construct_filter_and_projections_for_list_clusters", "search_weather_tool"]
+# Create a site map for site names to site IDs
 site_map = {"Houston": "cc2fa1db-15da-4ba6-894c-d2accc2ac285"}
 
 agent = create_react_agent(model=local_llm, tools=tools)
@@ -168,10 +169,11 @@ def new_interact(user_input: str):
 
     2. When using construct_filter_and_projections_for_list_clusters, follow these rules:
     - Use the filters parameter for the filter expression. It should be a dictionary with key-value pairs.
+    - IF the query includes any site name, query the {site_map} with the site name to get the siteID as the value and use that value as the filter value.
+    - if the query includes multiple filters, combine them in the filters dictionary with appropriate attributeNames.
     - If no filters are passed, set filters parameter to an empty dictionary.
     - Use the projections parameter for the attributes to include in the response. It should be a list of attributes.
     - Use limit parameter for maximum results (e.g., 10 or None for all)
-    - In case the query includes any site, use the {site_map} to get the siteID.
     Examples:
     - To list all clusters with clusterName devex4 and status is Ready, filters={{\"clusterName\": \"devex4\", \"status\": \"Ready\"}}, limit=10
     - To list all clusters with clusterName devex4, filters={{\"clusterName\": \"devex4\"}}, limit=10
@@ -210,7 +212,7 @@ def new_interact(user_input: str):
 # new_interact("Tell me a joke")
 # new_interact("list all clusters with clusterName devex4 and status is Ready")
 # new_interact("Give me all clusters in Houston site that are available")
-new_interact("Give me all clusters (clusterIDs and names) in Houston site that are available")
+new_interact("Give me all available clusters (clusterIDs and names) in the Houston site")
 # new_interact("list any 5 clusters")
 
 
